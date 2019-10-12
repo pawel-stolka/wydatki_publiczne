@@ -1,0 +1,24 @@
+{
+  "name": "api_2",
+  "version": "2.0.0",
+  "description": "server for WydatkiPublic",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "PS",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "debug": "^4.1.1",
+    "dotenv": "^8.1.0",
+    "express": "^4.17.1",
+    "jwt-simple": "^0.5.6",
+    "moment": "^2.24.0",
+    "mongoose": "^5.6.5",
+    "morgan": "^1.9.1",
+    "nodemailer": "^6.3.0"
+  }
+}
