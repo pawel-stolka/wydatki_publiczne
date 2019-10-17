@@ -5,7 +5,8 @@ let express = require('express'),
     morgan = require('morgan'),
     Bill = require('./models/Bill'),
     User = require('./models/User'),
-    auth = require('./auth')
+    auth = require('./auth'),
+    socketIo = require('socket.io')
 
 let dotenv = require('dotenv')
 dotenv.config();
@@ -255,6 +256,14 @@ mongoose.connect(mongoString, (err) => {
 // debug('booting %o', name);
 
 
-app.listen(port, () => {
+var server = app.listen(port, () => {
     console.log(` ===> server is listening at =====> port ${port}`)
 });
+
+let io = socketIo(server)
+
+
+io.on('connection', (socket) => {
+    console.log('Connected client on port %s.', port)
+
+})
