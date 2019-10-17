@@ -52,10 +52,18 @@ app.post('/templogin', async (req, res) => {
     console.log('user =>', loginData)
 
     var _user = await User.findOne({
-        name: loginData.name
+        name: loginData.name        
     })
+   
     
     if(_user) {
+        if(_user.verified == true)
+            return res
+                .status(400)
+                .send({
+                    message: 'Real user - cannot log'
+                })
+
         var _loggedIn = _user.loggedIn
         _loggedIn.push(new Date)
         _user.loggedIn = _loggedIn
@@ -84,7 +92,154 @@ app.post('/templogin', async (req, res) => {
 
 app.use('/auth', auth.router)
 
+app.post('/check/:name', auth.checkAuthenticated, async (req, res) => {
+    let name = req.params.name
 
+    try {
+        var user = await User.findOne({ name })
+        res.send(user)
+    } catch (error) {
+        console.error(error)
+        res.sendStatus(500)
+    }
+})
+
+app.get('/bills/:user', auth.checkAuthenticated, async (req, res) => {
+    let user = req.params.user
+    try {
+        var bills = await Bill.find({username: user}, '-__v')
+        // var users = await User.find({}, '-pass -__v')
+        let parsedBills = bills.map(b => {
+            let type = b.type.replace(' ', '_')//'\u00a0')// String.fromCharCode(160))
+            let res = {
+                _id: b._id,
+                username: b.username,
+                name: b.name,
+                type,
+                price: b.price,
+                date: b.date,
+                createdAt: b.createdAt
+            }
+            return res
+        })
+        // console.log('...bills', parsedBills)
+        res.send(parsedBills)
+    } catch (error) {
+        console.error(error)
+        res.sendStatus(500)
+    }
+})
+
+app.get('/billsByYear/:user', async (req, res) => {
+    let user = req.params.user
+    let types = await Bill.aggregate([
+        { $match: { username: user } },
+        {
+            $project: {
+                year: { $year: "$date" },
+                month: { $month: "$date" },
+                day: { $dayOfMonth: "$date" },
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    year: '$year',
+                },
+                count: {
+                    $sum: 1
+                },
+              }
+        }
+    ])
+    
+    let result = types.map(x => ({
+        year: x._id.year,
+        count: x.count
+    }))
+
+    return res.status(200)
+        .send(result)
+})
+
+app.get('/type', async (req, res) => {
+    let types = await Bill.aggregate([{
+        $group: {
+            _id: '$type',
+            count: {
+                $sum: 1
+            },
+            entry: {
+                $push: {
+                    username: '$username',
+                    name: "$name",
+                    price: "$price",
+                }
+            }
+        }
+    }])
+    let typesParsed = types.map(x => {
+        let id = x._id//.split(' ')
+            .replace(' ', '_')
+        
+        let res = {
+            _id: id,
+            count: x.count,
+            entry: x.entry
+        }
+        return res
+    })
+    // console.log('---types---', typesParsed)
+    return res.status(200)
+        .send(typesParsed)
+})
+
+app.post('/bill', async (req, res) => {
+    var billData = req.body;
+    console.log(billData)
+    if (billData.price == '' ||
+        billData.date == '' ||
+        billData.type == null ||
+        billData.price == null ||
+        billData.date == null ||
+        billData.type == '')
+        return res.status(400)
+            .send({
+                message: 'not enough data...',
+                details: billData
+            })
+
+    var exist = await Bill.find({
+        username: billData.username,
+        name: billData.name,
+        price: billData.price,
+        date: billData.date
+    }, '-__v')
+    console.log(exist)
+
+    if (exist.length > 0) {
+        console.log('exists', exist)
+        return res.status(400)
+            .send({
+                message: 'Already in database!',
+                exist
+            })
+    }
+
+    var bill = new Bill(billData)
+    console.log('...>>> bill', bill)
+    bill.save((err, result) => {
+        if (err) {
+            console.error(`ERROR: ${err}`)
+            return res.status(401)
+                .send({
+                    message: 'Could not save the bill...'
+                })
+        }
+        return res.status(200)
+            .send(billData)
+    })
+})
 
 mongoose.connect(mongoString, (err) => {
     let _name = mongoString.split('/'),
