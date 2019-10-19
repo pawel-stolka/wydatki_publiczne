@@ -266,4 +266,9 @@ let io = socketIo(server)
 io.on('connection', (socket) => {
     console.log('Connected client on port %s.', port)
 
+    socket.on('message', (message) => {
+        console.log('[server](message):') 
+        console.log(message)
+        io.emit('message', message);
+    })
 })
