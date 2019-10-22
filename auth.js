@@ -35,13 +35,11 @@ var auth = {
             // the same secret as in encode!!!!!!!!!!!!!!!!!!!!
             var payload = jwt.decode(token, SECRET)
         } catch (error) {
-            
-            console.log('jwt.decode ERROR-------', token)
-            if(token == 'demoUser') {
+            // BAD CODE-SMELL!!! temp workaround
+            if(token == DEMOUSER) {
                 var payload = {
                     sub: DEMOUSER
                 }
-                // next()
             }
         }
         
