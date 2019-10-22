@@ -22,7 +22,7 @@ app.use(bodyParser.json())
 app.use(morgan('dev'))
 
 app.get('/', (req, res) => {
-    let msg = 'hi! WydatkiPublic_2.0 are doing great! | DB: ' + mongoString
+    let msg = 'hi! WydatkiPublic_2.0 are doing great! '
     res.send(msg)
 })
 
