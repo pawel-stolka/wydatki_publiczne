@@ -12,9 +12,10 @@ dotenv.config();
 
 let SECRET = process.env.SECRET,
     FRONT_URL = process.env.FRONT_URL,
+    HOST = process.env.HOST,
     MAIL_USER = process.env.MAIL_USER,
     MAIL_PASS = process.env.MAIL_PASS,
-    DEMOUSER = 'demoUser'
+    DEMOUSER = process.env.DEMOUSER
 
 
 router.use(cors())
@@ -67,11 +68,11 @@ router.post('/register', async (req, res) => {
             })
     }
     var user = new User(userData)
-    console.log('***user***', user)
+    // console.log('***user***', user)
 
     user.temporaryToken = jwt.encode({
         sub: user._id
-    }, 'SECRET')
+    }, SECRET)
     // console.log('debug', user)
     var _existing = await User.findOne({
         email: userData.email
@@ -103,7 +104,7 @@ router.post('/register', async (req, res) => {
 
         console.log('webio--------newUser', newUser, webio)
 
-        var result = webio2(webio)
+        var result = Webio(webio)
 
         res.status(result.status)
             .send(result.message)
@@ -112,12 +113,10 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', auth.checkAuthenticated, async (req, res) => {
     var loginData = req.body;
-    console.log('-----login....loginData', loginData)
     var user = await User.findOne({
         email: loginData.email
     })
-    console.log('-----login....user', user)
-    console.log('-----login....loginData', loginData)
+    // console.log('-----login....user', user)
     if (!user)
         return res.status(401)
             .send({
@@ -159,8 +158,7 @@ router.post('/login', auth.checkAuthenticated, async (req, res) => {
         var payload = {
             sub: user._id
         }
-        console.log('##### payload SECRET! ', payload, SECRET)
-        var token = jwt.encode(payload, 'SECRET')
+        var token = jwt.encode(payload, SECRET)
         return res.status(200)
         .send({
             token,
@@ -169,13 +167,64 @@ router.post('/login', auth.checkAuthenticated, async (req, res) => {
             name: user.name,
             message: 'Voila! You are logged in :)'
         })
-        // let response = createSendToken(res, user)
-        console.log('..__..response..', response)
     })
 })
 
 
+//#region FUNCTIONS
+function Webio(mailData, res) {
+    let appName = 'Wydatki',
+        receivers = [ mailData.email, MAIL_USER ],
+        activationLink = `${FRONT_URL}/activate/${mailData.temporaryToken}`
 
+        
+    let contentHTML = `
+        <h2>Hello ${mailData.name}!</h2>
+        <br>
+        Thank you for registering at <b>"${appName}"</b> :)
+        <br>
+        <br>
+        Please click on the link below to complete your activation: 
+        <br>
+        <a href="${activationLink}">Activate</a>
+        <p> Pablo from "${appName}" </p>
+    `
+    console.log('____activationLink____', activationLink, contentHTML)
+    let email = {
+        from: MAIL_USER,
+        to: receivers,
+        subject: 'Activation Link',
+        html: contentHTML
+    }
+
+    let transporter = nodeMailer.createTransport({
+        host: HOST,
+        secure: false,
+        auth: {
+            user: MAIL_USER,
+            pass: MAIL_PASS
+        }
+    });
+    
+    let result = {
+        status: 400,
+        message: "nope...",
+        info: '-'
+    }
+    transporter.sendMail(email, (error, info) => {
+        if (error) {
+            return result
+        }
+        result.info = info.response
+    });
+
+    result.status = 200
+    result.message = `Message sent: ${result.info}`
+    result.message = `Account created! Please check your e-mail for activation link.`
+
+    return result
+}
+//#endregion
 
 
 

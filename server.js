@@ -22,7 +22,7 @@ app.use(bodyParser.json())
 app.use(morgan('dev'))
 
 app.get('/', (req, res) => {
-    let msg = 'hi! WydatkiPublic_2.0 are doing great! | DB: ' + mongoString
+    let msg = 'hi! WydatkiPublic_2.0 are doing great! '
     res.send(msg)
 })
 
@@ -197,7 +197,7 @@ app.get('/type', async (req, res) => {
 
 app.post('/bill', async (req, res) => {
     var billData = req.body;
-    console.log(billData)
+    // console.log(billData)
     if (billData.price == '' ||
         billData.date == '' ||
         billData.type == null ||
@@ -216,10 +216,10 @@ app.post('/bill', async (req, res) => {
         price: billData.price,
         date: billData.date
     }, '-__v')
-    console.log(exist)
+    // console.log(exist)
 
     if (exist.length > 0) {
-        console.log('exists', exist)
+        // console.log('exists', exist)
         return res.status(400)
             .send({
                 message: 'Already in database!',
@@ -228,7 +228,7 @@ app.post('/bill', async (req, res) => {
     }
 
     var bill = new Bill(billData)
-    console.log('...>>> bill', bill)
+    // console.log('...>>> bill', bill)
     bill.save((err, result) => {
         if (err) {
             console.error(`ERROR: ${err}`)
